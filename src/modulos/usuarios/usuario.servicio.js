@@ -1,83 +1,57 @@
 import bcrypt from "bcryptjs";
 import { usuarioRepositorio } from "./usuario.repositorio.js";
-import {
-  validarCreacionUsuario,
-  validarActualizacionUsuario,
-} from "./usuario.validacion.js";
 
 export const usuarioServicio = {
-  async listar() {
-    return usuarioRepositorio.listar();
-  },
+  async login(correo, contrasena) {
+    const usuario = await usuarioRepositorio.buscarPorCorreo(correo);
 
-  async obtenerPorId(id) {
-    const usuario = await usuarioRepositorio.buscarPorId(id);
-    if (!usuario) {
-      const error = new Error("Usuario no encontrado");
-      error.tipo = "VALIDACION";
-      throw error;
-    }
+    if (!usuario || usuario.eliminado)
+      throw { tipo: "VALIDACION", message: "Credenciales inválidas" };
+
+    const ok = await bcrypt.compare(contrasena, usuario.contrasenaHash);
+    if (!ok) throw { tipo: "VALIDACION", message: "Credenciales inválidas" };
+
     return usuario;
   },
 
-  async crear(payload) {
-    validarCreacionUsuario(payload);
+  async obtenerMiPerfil(id) {
+    const usuario = await usuarioRepositorio.buscarPorId(id);
+    if (!usuario)
+      throw { tipo: "VALIDACION", message: "Usuario no encontrado" };
 
-    const existente = await usuarioRepositorio.buscarPorCorreo(payload.correo);
-    if (existente) {
-      const error = new Error("Ya existe un usuario con ese correo");
-      error.tipo = "VALIDACION";
-      throw error;
-    }
-
-    const contrasenaHash = await bcrypt.hash(payload.contrasena, 10);
-
-    const nuevoUsuario = await usuarioRepositorio.crear({
-      nombre: payload.nombre.trim(),
-      correo: payload.correo.toLowerCase(),
-      contrasenaHash,
-      rol: payload.rol,
-    });
-
-    const { contrasenaHash: _, ...usuarioSinContrasena } = nuevoUsuario;
-    return usuarioSinContrasena;
+    delete usuario.contrasenaHash;
+    return usuario;
   },
 
-  async actualizar(id, payload) {
-    validarActualizacionUsuario(payload);
-
-    if (payload.correo) {
-      const existente = await usuarioRepositorio.buscarPorCorreo(
-        payload.correo
-      );
-      if (existente && existente.id !== id) {
-        const error = new Error("Ya existe un usuario con ese correo");
-        error.tipo = "VALIDACION";
-        throw error;
-      }
-    }
-
-    const datosActualizar = {
-      nombre: payload.nombre,
-      correo: payload.correo?.toLowerCase(),
-      rol: payload.rol,
-    };
-
-    Object.keys(datosActualizar).forEach((clave) => {
-      if (typeof datosActualizar[clave] === "undefined")
-        delete datosActualizar[clave];
+  async actualizarMiPerfil(id, datos) {
+    const actualizado = await usuarioRepositorio.actualizar(id, {
+      nombre: datos.nombre,
+      correo: datos.correo?.toLowerCase(),
     });
 
-    const actualizado = await usuarioRepositorio.actualizar(
-      id,
-      datosActualizar
-    );
-    const { contrasenaHash: _, ...usuarioSinContrasena } = actualizado;
-    return usuarioSinContrasena;
+    delete actualizado.contrasenaHash;
+    return actualizado;
   },
 
-  async eliminar(id) {
-    await usuarioRepositorio.eliminarLogico(id);
+  async cambiarContrasena(id, actual, nueva) {
+    const usuario = await usuarioRepositorio.buscarPorId(id);
+    if (!usuario)
+      throw { tipo: "VALIDACION", message: "Usuario no encontrado" };
+
+    const ok = await bcrypt.compare(actual, usuario.contrasenaHash);
+    if (!ok)
+      throw { tipo: "VALIDACION", message: "Contraseña actual incorrecta" };
+
+    const nuevaHash = await bcrypt.hash(nueva, 10);
+
+    await usuarioRepositorio.actualizar(id, { contrasenaHash: nuevaHash });
+
     return true;
   },
+
+  listar: () => usuarioRepositorio.listar(),
+  obtenerPorId: (id) => usuarioRepositorio.buscarPorId(id),
+  crear: (body) => usuarioRepositorio.crear(body),
+  actualizar: (id, body) => usuarioRepositorio.actualizar(id, body),
+  eliminar: (id) => usuarioRepositorio.eliminar(id),
 };

@@ -4,7 +4,13 @@ import { verificarTokenMiddleware } from "../../core/autenticacionJWT.js";
 
 export const routerUsuarios = Router();
 
+routerUsuarios.post("/login", usuarioControlador.login);
+
 routerUsuarios.use(verificarTokenMiddleware);
+
+routerUsuarios.get("/me", usuarioControlador.me);
+routerUsuarios.put("/me", usuarioControlador.updateMe);
+routerUsuarios.put("/me/password", usuarioControlador.changePassword);
 
 routerUsuarios.get("/", usuarioControlador.listar);
 routerUsuarios.get("/:id", usuarioControlador.obtenerPorId);

@@ -1,41 +1,54 @@
 import jwt from "jsonwebtoken";
+import { PrismaClient } from "@prisma/client";
 
-const CLAVE_JWT = process.env.JWT_SECRET || "CLAVE_SUPER_SECRETA";
+const prisma = new PrismaClient();
+const CLAVE = process.env.JWT_CLAVE || "CLAVE_SUPER_SECRETA";
 
-export function generarToken(usuario) {
-  const payload = {
-    id: usuario.id,
-    correo: usuario.correo,
-    rol: usuario.rol,
-  };
+export const generarToken = (usuario) => {
+  return jwt.sign(
+    {
+      id: usuario.id,
+      rol: usuario.rol,
+    },
+    CLAVE,
+    { expiresIn: "8h" }
+  );
+};
 
-  return jwt.sign(payload, CLAVE_JWT, { expiresIn: "8h" });
-}
+export const verificarTokenMiddleware = async (req, res, next) => {
+  const header = req.headers.authorization;
 
-export function verificarTokenMiddleware(req, res, next) {
-  const cabecera = req.headers["authorization"];
-
-  if (!cabecera) {
-    const error = new Error("Token no proporcionado");
-    error.tipo = "AUTENTICACION";
-    return next(error);
+  if (!header) {
+    return res.status(401).json({
+      exito: false,
+      mensaje: "Token no proporcionado",
+      errores: null,
+    });
   }
 
-  const [tipo, token] = cabecera.split(" ");
-
-  if (tipo !== "Bearer" || !token) {
-    const error = new Error("Formato de token inválido");
-    error.tipo = "AUTENTICACION";
-    return next(error);
-  }
+  const token = header.split(" ")[1];
 
   try {
-    const datos = jwt.verify(token, CLAVE_JWT);
-    req.usuarioActual = datos;
+    const decoded = jwt.verify(token, CLAVE);
+
+    const usuario = await prisma.usuario.findUnique({
+      where: { id: decoded.id },
+    });
+
+    if (!usuario || usuario.eliminado) {
+      return res.status(401).json({
+        exito: false,
+        mensaje: "Token inválido o usuario eliminado",
+      });
+    }
+
+    req.usuarioActual = usuario;
+
     next();
-  } catch (e) {
-    const error = new Error("Token inválido o expirado");
-    error.tipo = "AUTENTICACION";
-    return next(error);
+  } catch (error) {
+    return res.status(401).json({
+      exito: false,
+      mensaje: "Token inválido",
+    });
   }
-}
+};

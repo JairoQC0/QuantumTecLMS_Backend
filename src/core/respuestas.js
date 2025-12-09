@@ -1,15 +1,15 @@
-export function respuestaExitosa(
+export const respuestaExitosa = (
   res,
   datos = null,
-  mensaje = "Operación exitosa",
+  mensaje = "OK",
   codigo = 200
-) {
+) => {
   return res.status(codigo).json({
     exito: true,
     mensaje,
     datos,
   });
-}
+};
 
 export function respuestaError(
   res,
