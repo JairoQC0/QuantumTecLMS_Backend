@@ -1,10 +1,10 @@
 import express from "express";
 import cors from "cors";
-import { manejarErrores } from "./src/core/manejoErrores.js";
-import { respuestasNoEncontrado } from "./src/core/respuestas.js";
+import { manejarErrores } from "./core/manejoErrores.js";
+import { respuestasNoEncontrado } from "./core/respuestas.js";
 
-import { routerUsuarios } from "./src/modulos/usuarios/usuario.rutas.js";
-import { routerAutenticacion } from "./src/modulos/autenticacion/autenticacion.rutas.js";
+import { routerUsuarios } from "./modulos/usuarios/usuario.rutas.js";
+import { routerAutenticacion } from "./modulos/autenticacion/autenticacion.rutas.js";
 
 export function crearAplicacion() {
   const app = express();
