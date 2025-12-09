@@ -17,3 +17,5 @@ routerUsuarios.get("/:id", usuarioControlador.obtenerPorId);
 routerUsuarios.post("/", usuarioControlador.crear);
 routerUsuarios.put("/:id", usuarioControlador.actualizar);
 routerUsuarios.delete("/:id", usuarioControlador.eliminar);
+
+routerUsuarios.put("/:id/restaurar", usuarioControlador.restaurar);

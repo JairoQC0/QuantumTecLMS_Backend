@@ -1,36 +1,32 @@
 import bcrypt from "bcryptjs";
 import { usuarioRepositorio } from "../usuarios/usuario.repositorio.js";
 import { generarToken } from "../../core/autenticacionJWT.js";
-import { respuestaExitosa } from "../../core/respuestas.js";
+import { respuestaExitosa, respuestaError } from "../../core/respuestas.js";
 
 async function login(req, res, next) {
   try {
     const { correo, contrasena } = req.body;
 
     if (!correo || !contrasena) {
-      const error = new Error("Correo y contraseña son obligatorios");
-      error.tipo = "VALIDACION";
-      throw error;
+      return respuestaError(res, "Correo y contraseña son obligatorios", 400);
     }
 
-    const usuario = await usuarioRepositorio.buscarPorCorreo(
-      correo.toLowerCase()
+    const correoNormalizado = correo.trim().toLowerCase();
+    const usuario = await usuarioRepositorio.obtenerPorCorreo(
+      correoNormalizado
     );
+
     if (!usuario) {
-      const error = new Error("Credenciales inválidas");
-      error.tipo = "AUTENTICACION";
-      throw error;
+      return respuestaError(res, "Credenciales inválidas", 401);
     }
 
     const coincide = await bcrypt.compare(contrasena, usuario.contrasenaHash);
     if (!coincide) {
-      const error = new Error("Credenciales inválidas");
-      error.tipo = "AUTENTICACION";
-      throw error;
+      return respuestaError(res, "Credenciales inválidas", 401);
     }
 
     const token = generarToken(usuario);
-    const { contrasenaHash: _, ...usuarioSinContrasena } = usuario;
+    const { contrasenaHash, ...usuarioSinContrasena } = usuario;
 
     return respuestaExitosa(
       res,
@@ -42,6 +38,4 @@ async function login(req, res, next) {
   }
 }
 
-export const autenticacionControlador = {
-  login,
-};
+export const autenticacionControlador = { login };

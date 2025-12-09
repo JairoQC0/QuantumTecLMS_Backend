@@ -1,12 +1,22 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "../../database/prisma.js";
 
 export const usuarioRepositorio = {
-  buscarPorCorreo: (correo) => prisma.usuario.findUnique({ where: { correo } }),
-
-  buscarPorId: (id) => prisma.usuario.findUnique({ where: { id } }),
-
   crear: (data) => prisma.usuario.create({ data }),
+
+  listar: () =>
+    prisma.usuario.findMany({
+      orderBy: { id: "desc" },
+    }),
+
+  obtenerPorId: (id) =>
+    prisma.usuario.findUnique({
+      where: { id },
+    }),
+
+  obtenerPorCorreo: (correo) =>
+    prisma.usuario.findUnique({
+      where: { correo },
+    }),
 
   actualizar: (id, data) =>
     prisma.usuario.update({
@@ -14,11 +24,15 @@ export const usuarioRepositorio = {
       data,
     }),
 
-  listar: () => prisma.usuario.findMany(),
-
   eliminar: (id) =>
     prisma.usuario.update({
       where: { id },
       data: { eliminado: true },
+    }),
+
+  restaurar: (id) =>
+    prisma.usuario.update({
+      where: { id },
+      data: { eliminado: false },
     }),
 };

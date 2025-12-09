@@ -25,6 +25,7 @@ export const usuarioControlador = {
       const perfil = await usuarioServicio.obtenerMiPerfil(
         req.usuarioActual.id
       );
+
       return respuestaExitosa(res, perfil, "Perfil obtenido");
     } catch (err) {
       next(err);
@@ -37,6 +38,7 @@ export const usuarioControlador = {
         req.usuarioActual.id,
         req.body
       );
+
       return respuestaExitosa(res, actualizado, "Perfil actualizado");
     } catch (err) {
       next(err);
@@ -50,6 +52,7 @@ export const usuarioControlador = {
         req.body.actual,
         req.body.nueva
       );
+
       return respuestaExitosa(res, null, "Contraseña actualizada");
     } catch (err) {
       next(err);
@@ -89,6 +92,7 @@ export const usuarioControlador = {
         parseInt(req.params.id),
         req.body
       );
+
       return respuestaExitosa(res, data, "Usuario actualizado");
     } catch (err) {
       next(err);
@@ -99,6 +103,15 @@ export const usuarioControlador = {
     try {
       await usuarioServicio.eliminar(parseInt(req.params.id));
       return respuestaExitosa(res, null, "Usuario eliminado");
+    } catch (err) {
+      next(err);
+    }
+  },
+
+  restaurar: async (req, res, next) => {
+    try {
+      await usuarioServicio.restaurar(parseInt(req.params.id));
+      return respuestaExitosa(res, null, "Usuario restaurado");
     } catch (err) {
       next(err);
     }
