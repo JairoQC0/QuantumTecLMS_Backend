@@ -3,14 +3,18 @@ import bcrypt from "bcryptjs";
 
 const prisma = new PrismaClient();
 
+function generarCodigoCurso() {
+  return Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
 async function main() {
-  console.log("🚀 Iniciando seed de usuarios...");
+  console.log("🚀 Iniciando seed de usuarios y cursos...");
 
   const adminPass = await bcrypt.hash("admin123", 10);
   const docentePass = await bcrypt.hash("docente123", 10);
   const estudiantePass = await bcrypt.hash("estudiante123", 10);
 
-  await prisma.usuario.upsert({
+  const admin = await prisma.usuario.upsert({
     where: { correo: "admin@quantumtec.com" },
     update: {},
     create: {
@@ -21,7 +25,7 @@ async function main() {
     },
   });
 
-  await prisma.usuario.upsert({
+  const docente = await prisma.usuario.upsert({
     where: { correo: "docente@quantumtec.com" },
     update: {},
     create: {
@@ -32,7 +36,7 @@ async function main() {
     },
   });
 
-  await prisma.usuario.upsert({
+  const estudiante = await prisma.usuario.upsert({
     where: { correo: "estudiante@quantumtec.com" },
     update: {},
     create: {
@@ -40,6 +44,19 @@ async function main() {
       correo: "estudiante@quantumtec.com",
       contrasenaHash: estudiantePass,
       rol: "ESTUDIANTE",
+    },
+  });
+
+  await prisma.curso.upsert({
+    where: { id: 1 },
+    update: {},
+    create: {
+      titulo: "Curso de Introducción a la Computación Cuántica",
+      descripcion:
+        "Conceptos fundamentales de qubits, puertas cuánticas y superposición.",
+      docenteId: docente.id,
+      activo: true,
+      codigoAcceso: generarCodigoCurso(),
     },
   });
 

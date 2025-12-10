@@ -1,39 +1,64 @@
 import { prisma } from "../../database/prisma.js";
 
 export const cursoRepositorio = {
-  listarTodos() {
+  listar() {
     return prisma.curso.findMany({
-      include: {
-        docente: true,
-      },
       orderBy: { id: "asc" },
+      include: {
+        docente: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true,
+          },
+        },
+      },
     });
   },
 
   listarPorDocente(docenteId) {
     return prisma.curso.findMany({
       where: { docenteId },
-      include: {
-        docente: true,
-      },
       orderBy: { id: "asc" },
-    });
-  },
-
-  listarDisponibles(usuarioId) {
-    return prisma.curso.findMany({
-      where: {
-        activo: true,
-        inscripciones: {
-          none: {
-            usuarioId,
+      include: {
+        docente: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true,
           },
         },
       },
+    });
+  },
+
+  obtenerPorId(id) {
+    return prisma.curso.findUnique({
+      where: { id },
       include: {
-        docente: true,
+        docente: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true,
+          },
+        },
       },
-      orderBy: { id: "asc" },
+    });
+  },
+
+  obtenerPorCodigo(codigoAcceso) {
+    return prisma.curso.findUnique({
+      where: { codigoAcceso },
+      include: {
+        docente: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true,
+          },
+        },
+      },
     });
   },
 
@@ -41,7 +66,13 @@ export const cursoRepositorio = {
     return prisma.curso.create({
       data,
       include: {
-        docente: true,
+        docente: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true,
+          },
+        },
       },
     });
   },
@@ -51,7 +82,13 @@ export const cursoRepositorio = {
       where: { id },
       data,
       include: {
-        docente: true,
+        docente: {
+          select: {
+            id: true,
+            nombre: true,
+            correo: true,
+          },
+        },
       },
     });
   },

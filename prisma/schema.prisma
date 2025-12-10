@@ -8,16 +8,17 @@ datasource db {
 }
 
 model Usuario {
-  id             Int           @id @default(autoincrement())
+  id             Int                   @id @default(autoincrement())
   nombre         String
-  correo         String        @unique
+  correo         String                @unique
   contrasenaHash String
   rol            RolUsuario
-  eliminado      Boolean       @default(false)
-  creadoEn       DateTime      @default(now())
-  actualizadoEn  DateTime      @updatedAt
+  eliminado      Boolean               @default(false)
+  creadoEn       DateTime              @default(now())
+  actualizadoEn  DateTime              @updatedAt
+  codigoAcceso   String                @unique @default(uuid())
 
-  cursosDictados Curso[]       @relation("CursosPorDocente")
+  cursosDictados Curso[]               @relation("CursosPorDocente")
   inscripciones  Inscripcion[]
   solicitudes    SolicitudInscripcion[]
 }
@@ -29,16 +30,16 @@ enum RolUsuario {
 }
 
 model Curso {
-  id             Int        @id @default(autoincrement())
+  id             Int                    @id @default(autoincrement())
   titulo         String
   descripcion    String?
-  activo         Boolean     @default(true)
-  codigoAcceso   String      @unique
-  creadoEn       DateTime    @default(now())
-  actualizadoEn  DateTime    @updatedAt
+  activo         Boolean                @default(true)
+  codigoAcceso   String                 @unique @default(dbgenerated("substr(md5(random()::text), 1, 6)"))
+  creadoEn       DateTime               @default(now())
+  actualizadoEn  DateTime               @updatedAt
 
   docenteId      Int
-  docente        Usuario     @relation("CursosPorDocente", fields: [docenteId], references: [id])
+  docente        Usuario                @relation("CursosPorDocente", fields: [docenteId], references: [id])
 
   inscripciones  Inscripcion[]
   solicitudes    SolicitudInscripcion[]
@@ -55,14 +56,14 @@ model Inscripcion {
 }
 
 model SolicitudInscripcion {
-  id         Int       @id @default(autoincrement())
+  id         Int               @id @default(autoincrement())
   usuarioId  Int
   cursoId    Int
-  estado     EstadoSolicitud @default(PENDIENTE)
-  creadoEn   DateTime  @default(now())
+  estado     EstadoSolicitud   @default(PENDIENTE)
+  creadoEn   DateTime          @default(now())
 
-  estudiante Usuario   @relation(fields: [usuarioId], references: [id])
-  curso      Curso     @relation(fields: [cursoId], references: [id])
+  estudiante Usuario           @relation(fields: [usuarioId], references: [id])
+  curso      Curso             @relation(fields: [cursoId], references: [id])
 }
 
 enum EstadoSolicitud {

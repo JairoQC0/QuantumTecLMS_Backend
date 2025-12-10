@@ -1,74 +1,140 @@
 import { cursoServicio } from "./curso.servicio.js";
-import { respuestaExitosa } from "../../core/respuestas.js";
+import { respuestaExitosa, respuestaError } from "../../core/respuestas.js";
 
 export const cursoControlador = {
-  listarTodos: async (req, res, next) => {
+  async listar(req, res) {
     try {
-      const data = await cursoServicio.listarTodos();
-      return respuestaExitosa(res, data);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  listarMisCursos: async (req, res, next) => {
-    try {
-      const data = await cursoServicio.listarPorDocente(req.usuarioActual.id);
-      return respuestaExitosa(res, data);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  listarCursosDisponibles: async (req, res, next) => {
-    try {
-      const data = await cursoServicio.listarDisponibles(req.usuarioActual.id);
-      return respuestaExitosa(res, data);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  crear: async (req, res, next) => {
-    try {
-      const payload = {
-        titulo: req.body.titulo,
-        descripcion: req.body.descripcion || "",
-        docenteId: Number(req.body.docenteId),
-      };
-
-      const data = await cursoServicio.crear(payload);
-      return respuestaExitosa(res, data, "Curso creado", 201);
-    } catch (err) {
-      next(err);
-    }
-  },
-
-  actualizar: async (req, res, next) => {
-    try {
-      const payload = {
-        titulo: req.body.titulo,
-        descripcion: req.body.descripcion,
-        docenteId: Number(req.body.docenteId),
-        activo: req.body.activo ?? undefined,
-      };
-
-      const data = await cursoServicio.actualizar(
-        Number(req.params.id),
-        payload
+      const cursos = await cursoServicio.listar();
+      return respuestaExitosa(res, 200, "Lista de cursos", cursos);
+    } catch (error) {
+      console.error("ERROR CONTROLADO:", error);
+      return respuestaError(
+        res,
+        500,
+        "Error al listar cursos",
+        error.message || String(error)
       );
-      return respuestaExitosa(res, data, "Curso actualizado");
-    } catch (err) {
-      next(err);
     }
   },
 
-  eliminar: async (req, res, next) => {
+  async listarPorDocente(req, res) {
     try {
-      await cursoServicio.eliminar(Number(req.params.id));
-      return respuestaExitosa(res, null, "Curso eliminado");
-    } catch (err) {
-      next(err);
+      const docenteId = Number(req.query.docenteId);
+      if (!docenteId) {
+        return respuestaError(res, 400, "El docenteId es obligatorio");
+      }
+
+      const cursos = await cursoServicio.listarPorDocente(docenteId);
+      return respuestaExitosa(res, 200, "Cursos del docente", cursos);
+    } catch (error) {
+      console.error("ERROR CONTROLADO:", error);
+      return respuestaError(
+        res,
+        500,
+        "Error al listar cursos del docente",
+        error.message || String(error)
+      );
+    }
+  },
+
+  async obtenerPorId(req, res) {
+    try {
+      const id = Number(req.params.id);
+      const curso = await cursoServicio.obtenerPorId(id);
+
+      if (!curso) {
+        return respuestaError(res, 404, "Curso no encontrado");
+      }
+
+      return respuestaExitosa(res, 200, "Curso obtenido", curso);
+    } catch (error) {
+      console.error("ERROR CONTROLADO:", error);
+      return respuestaError(
+        res,
+        500,
+        "Error al obtener curso",
+        error.message || String(error)
+      );
+    }
+  },
+
+  async crear(req, res) {
+    try {
+      const { titulo, descripcion, docenteId, activo } = req.body;
+
+      if (!titulo) {
+        return respuestaError(res, 400, "El título es obligatorio");
+      }
+
+      if (!docenteId) {
+        return respuestaError(
+          res,
+          400,
+          "El docenteId es obligatorio para crear el curso"
+        );
+      }
+
+      const curso = await cursoServicio.crear({
+        titulo,
+        descripcion,
+        docenteId: Number(docenteId),
+        activo: typeof activo === "boolean" ? activo : true,
+      });
+
+      return respuestaExitosa(res, 201, "Curso creado correctamente", curso);
+    } catch (error) {
+      console.error("ERROR CONTROLADO:", error);
+      return respuestaError(
+        res,
+        500,
+        "Error al crear curso",
+        error.message || String(error)
+      );
+    }
+  },
+
+  async actualizar(req, res) {
+    try {
+      const id = Number(req.params.id);
+      const { titulo, descripcion, activo, docenteId } = req.body;
+
+      const curso = await cursoServicio.actualizar(id, {
+        titulo,
+        descripcion,
+        activo,
+        docenteId,
+      });
+
+      return respuestaExitosa(
+        res,
+        200,
+        "Curso actualizado correctamente",
+        curso
+      );
+    } catch (error) {
+      console.error("ERROR CONTROLADO:", error);
+      return respuestaError(
+        res,
+        500,
+        "Error al actualizar curso",
+        error.message || String(error)
+      );
+    }
+  },
+
+  async eliminar(req, res) {
+    try {
+      const id = Number(req.params.id);
+      await cursoServicio.eliminar(id);
+      return respuestaExitosa(res, 200, "Curso eliminado correctamente");
+    } catch (error) {
+      console.error("ERROR CONTROLADO:", error);
+      return respuestaError(
+        res,
+        500,
+        "Error al eliminar curso",
+        error.message || String(error)
+      );
     }
   },
 };

@@ -1,61 +1,50 @@
 import { cursoRepositorio } from "./curso.repositorio.js";
 
+function generarCodigoCurso() {
+  return Math.random().toString(16).substring(2, 8).toUpperCase();
+}
+
 export const cursoServicio = {
-  listarTodos() {
-    return cursoRepositorio.listarTodos();
+  listar() {
+    return cursoRepositorio.listar();
   },
 
   listarPorDocente(docenteId) {
     return cursoRepositorio.listarPorDocente(docenteId);
   },
 
-  listarDisponibles(usuarioId) {
-    return cursoRepositorio.listarDisponibles(usuarioId);
+  obtenerPorId(id) {
+    return cursoRepositorio.obtenerPorId(id);
   },
 
-  crear(dataEntrada) {
-    if (!dataEntrada.titulo || !dataEntrada.docenteId) {
-      const error = new Error("Datos incompletos");
-      error.tipo = "VALIDACION";
-      throw error;
-    }
+  obtenerPorCodigo(codigoAcceso) {
+    return cursoRepositorio.obtenerPorCodigo(codigoAcceso);
+  },
 
-    const docenteIdNumber = Number(dataEntrada.docenteId);
-    if (Number.isNaN(docenteIdNumber)) {
-      const error = new Error("Docente inválido");
-      error.tipo = "VALIDACION";
-      throw error;
-    }
+  async crear({ titulo, descripcion, docenteId, activo }) {
+    const codigoAcceso = generarCodigoCurso();
 
     const data = {
-      titulo: dataEntrada.titulo,
-      descripcion: dataEntrada.descripcion ?? null,
-      docenteId: docenteIdNumber,
+      titulo,
+      descripcion: descripcion || null,
+      docenteId,
+      activo: activo ?? true,
+      codigoAcceso,
     };
 
     return cursoRepositorio.crear(data);
   },
 
-  actualizar(id, dataEntrada) {
+  async actualizar(id, { titulo, descripcion, activo, docenteId }) {
     const data = {};
 
-    if (dataEntrada.titulo !== undefined) {
-      data.titulo = dataEntrada.titulo;
-    }
+    if (titulo !== undefined) data.titulo = titulo;
+    if (descripcion !== undefined) data.descripcion = descripcion;
+    if (typeof activo === "boolean") data.activo = activo;
 
-    if (dataEntrada.descripcion !== undefined) {
-      data.descripcion = dataEntrada.descripcion;
-    }
-
-    if (dataEntrada.activo !== undefined) {
-      data.activo = dataEntrada.activo;
-    }
-
-    if (dataEntrada.docenteId !== undefined) {
-      const docenteIdNumber = Number(dataEntrada.docenteId);
-      if (!Number.isNaN(docenteIdNumber)) {
-        data.docente = { connect: { id: docenteIdNumber } };
-      }
+    if (docenteId !== undefined && docenteId !== null && docenteId !== "") {
+      const parsed = Number(docenteId);
+      if (!Number.isNaN(parsed)) data.docenteId = parsed;
     }
 
     return cursoRepositorio.actualizar(id, data);
