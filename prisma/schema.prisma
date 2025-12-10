@@ -1,3 +1,4 @@
+// prisma/schema.prisma
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,67 +8,101 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Usuario {
-  id             Int                   @id @default(autoincrement())
-  nombre         String
-  correo         String                @unique
-  contrasenaHash String
-  rol            RolUsuario
-  eliminado      Boolean               @default(false)
-  creadoEn       DateTime              @default(now())
-  actualizadoEn  DateTime              @updatedAt
-  codigoAcceso   String                @unique @default(uuid())
-
-  cursosDictados Curso[]               @relation("CursosPorDocente")
-  inscripciones  Inscripcion[]
-  solicitudes    SolicitudInscripcion[]
-}
-
-enum RolUsuario {
+enum Role {
   ADMIN
-  DOCENTE
-  ESTUDIANTE
+  TEACHER
+  STUDENT
 }
 
-model Curso {
-  id             Int                    @id @default(autoincrement())
-  titulo         String
-  descripcion    String?
-  activo         Boolean                @default(true)
-  codigoAcceso   String                 @unique @default(dbgenerated("substr(md5(random()::text), 1, 6)"))
-  creadoEn       DateTime               @default(now())
-  actualizadoEn  DateTime               @updatedAt
-
-  docenteId      Int
-  docente        Usuario                @relation("CursosPorDocente", fields: [docenteId], references: [id])
-
-  inscripciones  Inscripcion[]
-  solicitudes    SolicitudInscripcion[]
+enum EnrollmentStatus {
+  PENDING
+  APPROVED
+  REJECTED
 }
 
-model Inscripcion {
-  id         Int      @id @default(autoincrement())
-  cursoId    Int
-  usuarioId  Int
-  creadoEn   DateTime @default(now())
+model User {
+  id            Int            @id @default(autoincrement())
+  name          String
+  email         String         @unique
+  passwordHash  String
+  role          Role           @default(STUDENT)
+  isActive      Boolean        @default(true)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  curso      Curso    @relation(fields: [cursoId], references: [id])
-  estudiante Usuario  @relation(fields: [usuarioId], references: [id])
+  // Relaciones
+  coursesTaught Course[]       @relation("TeacherCourses")
+  enrollments   Enrollment[]
+  submissions   Submission[]
 }
 
-model SolicitudInscripcion {
-  id         Int               @id @default(autoincrement())
-  usuarioId  Int
-  cursoId    Int
-  estado     EstadoSolicitud   @default(PENDIENTE)
-  creadoEn   DateTime          @default(now())
+model Course {
+  id          Int          @id @default(autoincrement())
+  title       String
+  description String?
+  isPublished Boolean      @default(false)
+  teacherId   Int
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
 
-  estudiante Usuario           @relation(fields: [usuarioId], references: [id])
-  curso      Curso             @relation(fields: [cursoId], references: [id])
+  teacher     User         @relation("TeacherCourses", fields: [teacherId], references: [id])
+  modules     CourseModule[]
+  enrollments Enrollment[]
+  assignments Assignment[]
 }
 
-enum EstadoSolicitud {
-  PENDIENTE
-  ACEPTADA
-  RECHAZADA
+model CourseModule {
+  id        Int      @id @default(autoincrement())
+  title     String
+  order     Int      @default(1)
+  courseId  Int
+
+  course    Course   @relation(fields: [courseId], references: [id])
+  lessons   Lesson[]
 }
+
+model Lesson {
+  id          Int          @id @default(autoincrement())
+  title       String
+  content     String?
+  order       Int          @default(1)
+  moduleId    Int
+
+  module      CourseModule @relation(fields: [moduleId], references: [id])
+}
+
+model Enrollment {
+  id          Int              @id @default(autoincrement())
+  studentId   Int
+  courseId    Int
+  status      EnrollmentStatus @default(PENDING)
+  createdAt   DateTime         @default(now())
+
+  student     User             @relation(fields: [studentId], references: [id])
+  course      Course           @relation(fields: [courseId], references: [id])
+}
+
+model Assignment {
+  id          Int        @id @default(autoincrement())
+  title       String
+  description String?
+  dueDate     DateTime?
+  courseId    Int
+  createdAt   DateTime   @default(now())
+
+  course      Course     @relation(fields: [courseId], references: [id])
+  submissions Submission[]
+}
+
+model Submission {
+  id           Int        @id @default(autoincrement())
+  content      String?
+  grade        Float?
+  submittedAt  DateTime   @default(now())
+  assignmentId Int
+  studentId    Int
+
+  assignment   Assignment @relation(fields: [assignmentId], references: [id])
+  student      User       @relation(fields: [studentId], references: [id])
+}
+
