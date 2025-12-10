@@ -1,38 +1,55 @@
 import { prisma } from "../../database/prisma.js";
 
 export const usuarioRepositorio = {
-  crear: (data) => prisma.usuario.create({ data }),
+  listar() {
+    return prisma.usuario.findMany({
+      orderBy: { id: "asc" },
+    });
+  },
 
-  listar: () =>
-    prisma.usuario.findMany({
-      orderBy: { id: "desc" },
-    }),
+  listarPorRol(rol) {
+    return prisma.usuario.findMany({
+      where: { rol },
+      orderBy: { id: "asc" },
+    });
+  },
 
-  obtenerPorId: (id) =>
-    prisma.usuario.findUnique({
+  obtenerPorId(id) {
+    return prisma.usuario.findUnique({
       where: { id },
-    }),
+    });
+  },
 
-  obtenerPorCorreo: (correo) =>
-    prisma.usuario.findUnique({
+  obtenerPorCorreo(correo) {
+    return prisma.usuario.findUnique({
       where: { correo },
-    }),
+    });
+  },
 
-  actualizar: (id, data) =>
-    prisma.usuario.update({
+  crear(data) {
+    return prisma.usuario.create({
+      data,
+    });
+  },
+
+  actualizar(id, data) {
+    return prisma.usuario.update({
       where: { id },
       data,
-    }),
+    });
+  },
 
-  eliminar: (id) =>
-    prisma.usuario.update({
+  eliminar(id) {
+    return prisma.usuario.update({
       where: { id },
       data: { eliminado: true },
-    }),
+    });
+  },
 
-  restaurar: (id) =>
-    prisma.usuario.update({
+  restaurar(id) {
+    return prisma.usuario.update({
       where: { id },
       data: { eliminado: false },
-    }),
+    });
+  },
 };

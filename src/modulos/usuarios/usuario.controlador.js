@@ -61,7 +61,8 @@ export const usuarioControlador = {
 
   listar: async (req, res, next) => {
     try {
-      const data = await usuarioServicio.listar();
+      const rol = req.query.rol;
+      const data = await usuarioServicio.listarPorRol(rol);
       return respuestaExitosa(res, data);
     } catch (err) {
       next(err);

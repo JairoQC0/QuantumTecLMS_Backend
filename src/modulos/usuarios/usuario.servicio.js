@@ -1,77 +1,52 @@
-import bcrypt from "bcryptjs";
 import { usuarioRepositorio } from "./usuario.repositorio.js";
+import bcrypt from "bcryptjs";
 
 export const usuarioServicio = {
   async login(correo, contrasena) {
     const usuario = await usuarioRepositorio.obtenerPorCorreo(correo);
+    if (!usuario) {
+      const error = new Error("Credenciales inválidas");
+      error.tipo = "AUTENTICACION";
+      throw error;
+    }
 
-    if (!usuario) throw new Error("Credenciales inválidas");
-
-    const valido = bcrypt.compareSync(contrasena, usuario.contrasenaHash);
-
-    if (!valido) throw new Error("Credenciales inválidas");
+    const coincide = await bcrypt.compare(contrasena, usuario.contrasenaHash);
+    if (!coincide) {
+      const error = new Error("Credenciales inválidas");
+      error.tipo = "AUTENTICACION";
+      throw error;
+    }
 
     return usuario;
   },
 
-  async obtenerMiPerfil(id) {
-    return usuarioRepositorio.obtenerPorId(id);
-  },
-
-  async actualizarMiPerfil(id, body) {
-    return usuarioRepositorio.actualizar(id, body);
-  },
-
-  async cambiarContrasena(id, actual, nueva) {
-    const usuario = await usuarioRepositorio.obtenerPorId(id);
-
-    if (!bcrypt.compareSync(actual, usuario.contrasenaHash)) {
-      throw new Error("Contraseña actual incorrecta");
-    }
-
-    const nuevoHash = bcrypt.hashSync(nueva, 10);
-
-    return usuarioRepositorio.actualizar(id, {
-      contrasenaHash: nuevoHash,
-    });
-  },
-
-  async listar() {
+  listar() {
     return usuarioRepositorio.listar();
   },
 
-  async obtenerPorId(id) {
+  listarPorRol(rol) {
+    if (!rol) return usuarioRepositorio.listar();
+    return usuarioRepositorio.listarPorRol(rol.toUpperCase());
+  },
+
+  obtenerPorId(id) {
     return usuarioRepositorio.obtenerPorId(id);
   },
 
-  async crear(body) {
-    const { nombre, correo, contrasena, rol } = body;
-
-    if (!nombre || !correo || !contrasena || !rol) {
-      throw new Error("Faltan datos obligatorios");
-    }
-
-    const contrasenaHash = bcrypt.hashSync(contrasena, 10);
-
-    const nuevo = await usuarioRepositorio.crear({
-      nombre,
-      correo,
-      contrasenaHash,
-      rol,
-    });
-
-    delete nuevo.contrasenaHash;
-
-    return nuevo;
+  obtenerPorCorreo(correo) {
+    return usuarioRepositorio.obtenerPorCorreo(correo);
   },
 
-  async actualizar(id, body) {
-    if (body.contrasena) {
-      body.contrasenaHash = bcrypt.hashSync(body.contrasena, 10);
-      delete body.contrasena;
-    }
+  async crear(data) {
+    const hash = bcrypt.hashSync(data.contrasena, 10);
+    data.contrasenaHash = hash;
+    delete data.contrasena;
 
-    return usuarioRepositorio.actualizar(id, body);
+    return usuarioRepositorio.crear(data);
+  },
+
+  actualizar(id, data) {
+    return usuarioRepositorio.actualizar(id, data);
   },
 
   async eliminar(id) {
@@ -80,5 +55,34 @@ export const usuarioServicio = {
 
   async restaurar(id) {
     return usuarioRepositorio.restaurar(id);
+  },
+
+  async obtenerMiPerfil(id) {
+    return usuarioRepositorio.obtenerPorId(id);
+  },
+
+  async actualizarMiPerfil(id, data) {
+    delete data.rol;
+    delete data.contrasenaHash;
+    delete data.eliminado;
+
+    return usuarioRepositorio.actualizar(id, data);
+  },
+
+  async cambiarContrasena(id, actual, nueva) {
+    const usuario = await usuarioRepositorio.obtenerPorId(id);
+    const coincide = await bcrypt.compare(actual, usuario.contrasenaHash);
+
+    if (!coincide) {
+      const error = new Error("Contraseña actual incorrecta");
+      error.tipo = "AUTENTICACION";
+      throw error;
+    }
+
+    const nuevoHash = bcrypt.hashSync(nueva, 10);
+
+    return usuarioRepositorio.actualizar(id, {
+      contrasenaHash: nuevoHash,
+    });
   },
 };

@@ -5,7 +5,8 @@ import { respuestasNoEncontrado } from "./core/respuestas.js";
 
 import { routerUsuarios } from "./modulos/usuarios/usuario.rutas.js";
 import { routerAutenticacion } from "./modulos/autenticacion/autenticacion.rutas.js";
-
+import { routerCursos } from "./modulos/cursos/curso.rutas.js";
+import { routerInscripciones } from "./modulos/inscripciones/inscripcion.rutas.js";
 export function crearAplicacion() {
   const app = express();
 
@@ -14,7 +15,8 @@ export function crearAplicacion() {
 
   app.use("/api/usuarios", routerUsuarios);
   app.use("/api/autenticacion", routerAutenticacion);
-
+  app.use("/api/cursos", routerCursos);
+  app.use("/api/inscripciones", routerInscripciones);
   app.use((req, res) => {
     return respuestasNoEncontrado(res, "Ruta no encontrada");
   });

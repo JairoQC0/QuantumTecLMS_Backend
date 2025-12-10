@@ -8,29 +8,29 @@ async function login(req, res, next) {
     const { correo, contrasena } = req.body;
 
     if (!correo || !contrasena) {
-      return respuestaError(res, "Correo y contraseña son obligatorios", 400);
+      return respuestaError(res, 400, "Correo y contraseña son obligatorios");
     }
 
-    const correoNormalizado = correo.trim().toLowerCase();
     const usuario = await usuarioRepositorio.obtenerPorCorreo(
-      correoNormalizado
+      correo.toLowerCase()
     );
 
     if (!usuario) {
-      return respuestaError(res, "Credenciales inválidas", 401);
+      return respuestaError(res, 401, "Credenciales inválidas");
     }
 
     const coincide = await bcrypt.compare(contrasena, usuario.contrasenaHash);
+
     if (!coincide) {
-      return respuestaError(res, "Credenciales inválidas", 401);
+      return respuestaError(res, 401, "Credenciales inválidas");
     }
 
     const token = generarToken(usuario);
-    const { contrasenaHash, ...usuarioSinContrasena } = usuario;
+    const { contrasenaHash, ...usuarioSinPassword } = usuario;
 
     return respuestaExitosa(
       res,
-      { token, usuario: usuarioSinContrasena },
+      { token, usuario: usuarioSinPassword },
       "Inicio de sesión exitoso"
     );
   } catch (err) {
